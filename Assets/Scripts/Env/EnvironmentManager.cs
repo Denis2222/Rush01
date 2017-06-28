@@ -5,10 +5,11 @@ using DigitalRuby.RainMaker;
 
 public class EnvironmentManager : MonoBehaviour {
 
-    private BaseRainScript rain;
-    private DayNightCycleManager cycle;
     private PlayerController player;
 
+    private BaseRainScript rain;
+    private DayNightCycleManager cycle;
+    private ThunderManager thunder;
 
     private Light sunLight;
     private Light moonLight;
@@ -18,6 +19,7 @@ public class EnvironmentManager : MonoBehaviour {
     // Use this for initialization
     void Start () {
         rain = GameObject.Find("RainPrefab").GetComponent<RainScript>().GetComponent<BaseRainScript>();
+        thunder = GetComponent<ThunderManager>();
 
         cycle = GetComponent<DayNightCycleManager>();
         cycle.sunLight = GameObject.Find("SunLight").GetComponent<Light>();
@@ -25,11 +27,8 @@ public class EnvironmentManager : MonoBehaviour {
 
         player = GameObject.Find("Player").GetComponent<PlayerController>();
 
-        
-
         rain.RainIntensity = 0;
         cycle.speed = 0;
-        //player.
     }
 	
 	// Update is called once per frame

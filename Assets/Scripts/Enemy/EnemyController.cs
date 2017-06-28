@@ -145,7 +145,7 @@ public class EnemyController : MonoBehaviour {
 				GetComponent<Animator> ().SetBool (MovementEnum.MOVEMENT_ATTACK, false);
 			}
 		} else if (thinkTime < Time.time){
-            print("New Action");
+            //print("New Action");
             thinkTime = Time.time + 3 + Random.Range(0f,3f);
 			setAnimatorSpeed (5);
 			this.followingPosition = this.playerController.transform.position;
@@ -162,7 +162,7 @@ public class EnemyController : MonoBehaviour {
 	void ScanRange() {	
 		Vector3 dir = this.playerController.transform.position - this.transform.position;
 		RaycastHit hit;
-		Debug.DrawRay(this.transform.position,dir);
+		//Debug.DrawRay(this.transform.position,dir);
 		if (Physics.Raycast(this.transform.position, dir, out hit, 20))
 		{
 			//print(hit.transform.tag);

@@ -51,7 +51,9 @@ public class UIEnemy : MonoBehaviour {
 
     public void Clean()
     {
-        this.gameObject.SetActive(false);
-       // this.gameObject
+        Name.GetComponent<Text>().text = "";
+        Blood.transform.localScale = new Vector2(0, 1f);
+        Back.transform.localScale = new Vector2(0, 1f);
+        enemy = null;
     }
 }

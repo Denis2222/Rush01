@@ -24,6 +24,7 @@ public class PlayerController : MonoBehaviour {
 		Agent = GetComponent<NavMeshAgent> ();
 		RPGPlayer = GetComponent<RPGPlayer> ();
         UIEnemy = GameObject.Find("UIEnemy").GetComponent<UIEnemy>();
+        UIEnemy.Clean();
 		isMooving = false;
 		//lockedCamera = false;
 		pauseGame = false;
@@ -43,7 +44,7 @@ public class PlayerController : MonoBehaviour {
 		Vector3 targetDir = Constants.GetMousePosition () - transform.position;
 		float step = 100f * Time.deltaTime;
 		Vector3 newDir = Vector3.RotateTowards(transform.forward, targetDir, step, 0.0F);
-		Debug.DrawRay(transform.position, newDir, Color.red);
+		//Debug.DrawRay(transform.position, newDir, Color.red);
 		transform.rotation = Quaternion.LookRotation(newDir);
 	}
 
@@ -51,19 +52,6 @@ public class PlayerController : MonoBehaviour {
 	{
 		float diff = Time.fixedTime - meleeTime;
 		if (diff > attackSpeed) {
-			/*Collider[] hitColliders = Physics.OverlapSphere (this.transform.position, 1f);
-			int i = 0;
-			while (i < hitColliders.Length) {
-				if (hitColliders [i].gameObject.tag == Constants.ENEMY_TAG) {
-					print("zombie touche");
-					EnemyController controller = hitColliders [i].gameObject.GetComponent<EnemyController> ();
-					if (controller.isDying == false)
-					{
-                        controller.takeDamage(RPGPlayer.getDamage());
-                    }
-				}
-				i++;
-			}*/
 			meleeTime = Time.fixedTime;
             if (RPGPlayer.rightHandEquiped != null)
             {
@@ -72,14 +60,11 @@ public class PlayerController : MonoBehaviour {
             }
             GetComponent<Animator>().SetBool(MovementEnum.MOVEMENT_ATTACK, true);
         }
-        //GetComponent<Animator>().SetBool(MovementEnum.MOVEMENT_ATTACK, false);
-
     }
 
     //Call from weapon when collide with enemy
     public void meleeAttackHit(Collider hit)
     {
-        //print("Hit"+ RPGPlayer.getDamage());
         EnemyController bad = hit.gameObject.GetComponent<EnemyController>();
         bad.takeDamage(RPGPlayer.getDamage());
     }
@@ -108,20 +93,22 @@ public class PlayerController : MonoBehaviour {
 
 	void catchMovement()
 	{
-
-		if (Input.GetMouseButton(MouseClickEnum.LEFT_CLICK)) {
-			print("Primary Attack");
+        if (Input.GetMouseButton(MouseClickEnum.LEFT_CLICK)) {
+            
+            //print("Primary Attack");
             bool castHit = false;
-			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            bool castFloor = false;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 			RaycastHit[] hits;
-        	hits = Physics.RaycastAll(ray, 100.0F);
+        	hits = Physics.RaycastAll(ray, 20.0F);
         	for (int i = 0; i < hits.Length; i++)
         	{
 				RaycastHit hit = hits[i];
-                print(hit.transform.tag);
+                //print(hit.transform.tag);
 
                 if (hit.transform.tag == "Enemy")
 				{
+                    rotateToMouse();
                     UIEnemy.LookThat(hit.transform.gameObject);
                     if (!hit.transform.GetComponent<EnemyController>().isDying)
                     {
@@ -129,7 +116,9 @@ public class PlayerController : MonoBehaviour {
                         meleeAttack();
                         break;
                     }
-				}
+				} else if (hit.transform.tag == "Floor"){
+                    castFloor = true; ;
+                }
         	}
             if (!castHit)
             {
@@ -137,26 +126,47 @@ public class PlayerController : MonoBehaviour {
                 Vector3 position = Constants.GetMousePosition();
                 if (position.x != 0 && position.y != 0 && position.z != 0)
                 {
-                    Debug.Log(Agent.SetDestination(position));
-                    GetComponent<Animator>().SetFloat(MovementEnum.MOVEMENT_FORWARD, 1);
-                    isMooving = true;
+                    //Debug.Log(position);
+                    // Debug.Log(Agent.destination);
+
+                    NavMeshHit hit;
+                    bool blocked = false;
+                    blocked = NavMesh.Raycast(transform.position, position, out hit, NavMesh.AllAreas);
+                    Debug.DrawLine(transform.position, position, blocked ? Color.red : Color.green);
+
+                    if (blocked)
+                        Debug.DrawRay(hit.position, Vector3.up, Color.red);
+                    if (Vector3.Distance(position, this.transform.position) > 2f)
+                        {
+                        rotateToMouse();
+                        Agent.SetDestination(position);
+                        Debug.Log("ChangeDestination");
+                        GetComponent<Animator>().SetFloat(MovementEnum.MOVEMENT_FORWARD, 1);
+                        isMooving = true;
+                    }
+                    else
+                    {
+                        GetComponent<Animator>().SetFloat(MovementEnum.MOVEMENT_FORWARD, 0);
+                        isMooving = false;
+                    }
+     
+
+                   
+                    //print("Move Forward");
+                    
                 }
             }
-            rotateToMouse();
+        }
+        else
+        {
+            print("Stop");
+            isMooving = false;
+            GetComponent<Animator>().SetBool(MovementEnum.MOVEMENT_ATTACK, false);
         }
 
-
-		if (Input.GetMouseButtonDown(MouseClickEnum.RIGHT_CLICK)) {
+        if (Input.GetMouseButtonDown(MouseClickEnum.RIGHT_CLICK)) {
 			RPGPlayer.useSpell(0);
 		}
-		if (Input.GetMouseButton (MouseClickEnum.LEFT_CLICK)) {
-
-		} else if (Input.GetKey (KeyCode.Q)) {
-			meleeAttack ();
-		} else {
-			GetComponent<Animator> ().SetBool (MovementEnum.MOVEMENT_ATTACK, false);
-		}
-
 	}
 
 	public void StopMovement()
@@ -170,7 +180,7 @@ public class PlayerController : MonoBehaviour {
 	void followCamera()
 	{
 		//if (lockedCamera) {
-            Camera.transform.position = new Vector3(this.transform.position.x, distanceCamera, this.transform.position.z-(distanceCamera / 8));
+            Camera.transform.position = new Vector3(this.transform.position.x, distanceCamera, this.transform.position.z-(distanceCamera / 6));
 			Camera.transform.LookAt(transform.position);
 		//} else {
             //Camera.transform.position = new Vector3(this.transform.position.x, Camera.transform.position.y, Camera.transform.position.z);
@@ -201,7 +211,7 @@ public class PlayerController : MonoBehaviour {
 			onPauseGame ();
 			return;
 		}
-		if (Input.GetKeyDown (KeyCode.E))
+		if (Input.GetKeyDown (KeyCode.Q))
 			this.takeItem ();
 		if (Input.GetKeyDown (KeyCode.D))
 			this.dropItem ();
